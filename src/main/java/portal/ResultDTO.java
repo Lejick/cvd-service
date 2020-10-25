@@ -4,6 +4,7 @@ public class ResultDTO {
     String country;
     Integer min;
     Integer max;
+    String queryType;
 
     public ResultDTO(String country, Integer min, Integer max) {
         this.country = country;
@@ -33,5 +34,13 @@ public class ResultDTO {
 
     public void setMax(Integer max) {
         this.max = max;
+    }
+
+    public String getQueryType() {
+        return queryType;
+    }
+
+    public void setQueryType(String queryType) {
+        this.queryType = queryType;
     }
 }
