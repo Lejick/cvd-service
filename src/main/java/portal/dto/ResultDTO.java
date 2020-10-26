@@ -1,4 +1,4 @@
-package portal;
+package portal.dto;
 
 public class ResultDTO {
     String country;

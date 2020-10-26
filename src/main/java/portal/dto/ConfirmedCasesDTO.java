@@ -1,4 +1,4 @@
-package portal;
+package portal.dto;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;

@@ -1,4 +1,4 @@
-package portal;
+package portal.component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+import portal.dto.ConfirmedCasesDTO;
+import portal.dto.ResultDTO;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -16,8 +18,8 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.*;
 
-import static portal.DateTransformUtil.convertToDateViaInstant;
-import static portal.DateTransformUtil.convertToLocalDateViaInstant;
+import static portal.processing.DateTransformUtil.convertToDateViaInstant;
+import static portal.processing.DateTransformUtil.convertToLocalDateViaInstant;
 
 @Service
 public class CvdService {
@@ -45,7 +47,10 @@ public class CvdService {
         ResultDTO resultDTO = findCached(country, dateFrom, dateTo);
         if (resultDTO == null) {
             Map<Date, Integer> casesMap = collectData(country, dateFrom, dateTo);
-            resultDTO = iterateToDate(dateFrom, dateTo, casesMap, country);
+            resultDTO = iterateToDate(dateFrom, dateTo, casesMap, country, true);
+            if (resultDTO == null) {
+                resultDTO = new ResultDTO(country, 0, 0);
+            }
             resultDTO.setQueryType("Server");
         } else {
             resultDTO.setQueryType("Cache");
@@ -58,10 +63,10 @@ public class CvdService {
         if (casesMap == null) {
             return null;
         }
-        return iterateToDate(dateFrom, dateTo, casesMap, country);
+        return iterateToDate(dateFrom, dateTo, casesMap, country, false);
     }
 
-    private ResultDTO iterateToDate(Date dateFrom, Date dateTo, Map<Date, Integer> casesMap, String country) {
+    private ResultDTO iterateToDate(Date dateFrom, Date dateTo, Map<Date, Integer> casesMap, String country, boolean fromServer) {
         Integer min = Integer.MAX_VALUE;
         Integer max = 0;
         LocalDate startDate = convertToLocalDateViaInstant(dateFrom);
@@ -72,7 +77,12 @@ public class CvdService {
             Integer cases = casesMap.get(dateKey);
             Integer casesPre = casesMap.get(preDateKey);
             if (cases == null || casesPre == null) {
-                return null;
+                if (!fromServer) {
+                    return null;
+                } else {
+                    cases = 0;
+                    casesPre = 0;
+                }
             }
             Integer diff = cases - casesPre;
             if (diff > max) {
@@ -104,7 +114,7 @@ public class CvdService {
         Map<Date, Integer> caseMap = countryCasesMap.getOrDefault(country, new HashMap<>());
         for (ConfirmedCasesDTO dto : pp1) {
             Date date = format.parse(dto.getDate().toUpperCase());
-            caseMap.put(date, dto.cases);
+            caseMap.put(date, dto.getCases());
         }
         countryCasesMap.put(country, caseMap);
         return caseMap;
